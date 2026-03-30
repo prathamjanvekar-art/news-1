@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>English News Express</title>
+    <meta name="description" content="Latest English news at your fingertips. Fast, clean, and responsive.">
+    <style>
+      :root {
+        --bg-color: #f4f7f6; --card-bg: #ffffff; --text-primary: #1a1a1a;
+        --text-secondary: #555555; --accent-color: #ff4757;
+        --shadow: 0 4px 15px rgba(0,0,0,0.1); --transition: all 0.3s ease; --header-height: 70px;
+      }
+      [data-theme="dark"] {
+        --bg-color: #121212; --card-bg: #1e1e1e; --text-primary: #e0e0e0;
+        --text-secondary: #aaaaaa; --shadow: 0 4px 20px rgba(0,0,0,0.4);
+      }
+      * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+      html { scroll-behavior:smooth; }
+      body { background-color:var(--bg-color); color:var(--text-primary); transition:var(--transition); line-height:1.6; padding-top:var(--header-height); padding-bottom:70px; }
+
+      header { position:fixed; top:0; left:0; width:100%; height:var(--header-height); background-color:var(--card-bg); display:flex; justify-content:space-between; align-items:center; padding:0 5%; box-shadow:var(--shadow); z-index:1000; transition:var(--transition); }
+      .logo { font-size:1.5rem; font-weight:800; color:var(--accent-color); text-transform:uppercase; letter-spacing:1px; }
+      .theme-toggle { background:none; border:none; cursor:pointer; padding:8px; border-radius:50%; display:flex; align-items:center; justify-content:center; background-color:var(--bg-color); transition:var(--transition); }
+      .theme-toggle:hover { transform:scale(1.1); }
+      .theme-toggle svg { width:24px; height:24px; fill:var(--text-primary); }
+
+      .category-container { position:sticky; top:var(--header-height); background-color:var(--bg-color); padding:15px 0; z-index:900; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+      .category-container::-webkit-scrollbar { display:none; }
+      .category-wrapper { display:inline-flex; gap:10px; padding:0 5%; }
+      .category-btn { padding:8px 20px; border-radius:25px; border:none; background-color:var(--card-bg); color:var(--text-primary); font-weight:600; cursor:pointer; box-shadow:var(--shadow); transition:var(--transition); text-transform:capitalize; }
+      .category-btn.active { background-color:var(--accent-color); color:white; }
+      .category-btn:hover { transform:translateY(-2px); }
+
+      .news-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:25px; padding:20px 5%; max-width:1400px; margin:0 auto; }
+      .news-card { background-color:var(--card-bg); border-radius:15px; overflow:hidden; box-shadow:var(--shadow); transition:var(--transition); display:flex; flex-direction:column; animation:fadeIn 0.5s ease forwards; }
+      @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+      .news-card:hover { transform:translateY(-10px); box-shadow:0 10px 25px rgba(0,0,0,0.15); }
+
+      .news-image { width:100%; height:200px; object-fit:cover; background-color:#ddd; }
+      .news-content { padding:20px; display:flex; flex-direction:column; flex-grow:1; }
+      .news-source { font-size:0.72rem; color:var(--accent-color); font-weight:700; margin-bottom:5px; text-transform:uppercase; }
+      .news-title { font-size:1.1rem; font-weight:700; margin-bottom:10px; color:var(--text-primary); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+      .news-desc { font-size:0.95rem; color:var(--text-secondary); margin-bottom:15px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; flex-grow:1; }
+      .news-footer { display:flex; justify-content:space-between; align-items:center; margin-top:auto; }
+      .news-date { font-size:0.8rem; color:var(--text-secondary); }
+      .read-more { padding:6px 15px; background-color:var(--accent-color); color:white; text-decoration:none; border-radius:5px; font-size:0.85rem; font-weight:600; transition:var(--transition); }
+      .read-more:hover { opacity:0.9; }
+
+      .loader-container { display:none; justify-content:center; align-items:center; padding:50px 0; grid-column:1/-1; }
+      .loader { width:48px; height:48px; border:5px solid var(--accent-color); border-bottom-color:transparent; border-radius:50%; display:inline-block; animation:rotation 1s linear infinite; }
+      @keyframes rotation { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+
+      .error-container { display:none; text-align:center; padding:50px 5%; grid-column:1/-1; }
+      .error-container h2 { color:var(--accent-color); margin-bottom:10px; }
+      .retry-btn { margin-top:15px; padding:10px 25px; background-color:var(--accent-color); color:white; border:none; border-radius:5px; cursor:pointer; font-size:1rem; }
+
+      .scroll-top { position:fixed; bottom:80px; right:20px; width:50px; height:50px; background-color:var(--accent-color); color:white; border-radius:50%; display:none; align-items:center; justify-content:center; box-shadow:var(--shadow); cursor:pointer; z-index:1000; transition:var(--transition); border:none; }
+      .scroll-top:hover { transform:scale(1.1); }
+
+      .ad-slot { background-color:var(--card-bg); border:2px dashed #ccc; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-size:0.9rem; margin:20px 0; min-height:100px; text-align:center; padding:10px; }
+      .in-feed-ad { grid-column:1/-1; width:100%; max-width:728px; margin:20px auto; }
+      .sticky-banner { position:fixed; bottom:0; left:0; width:100%; height:60px; background-color:var(--card-bg); box-shadow:0 -2px 10px rgba(0,0,0,0.1); z-index:1100; display:flex; align-items:center; justify-content:center; border-top:1px solid #eee; }
+
+      @media(max-width:600px) { .news-grid{grid-template-columns:1fr} .logo{font-size:1.2rem} header{padding:0 15px} }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">News Express</div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">
+        <svg id="sunIcon" viewBox="0 0 24 24" style="display:none">
+          <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
+        </svg>
+        <svg id="moonIcon" viewBox="0 0 24 24">
+          <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>
+        </svg>
+      </button>
+    </header>
+
+    <div class="category-container">
+      <div class="category-wrapper" id="categoryWrapper">
+        <button class="category-btn active" data-category="top">All</button>
+        <button class="category-btn" data-category="national">National</button>
+        <button class="category-btn" data-category="politics">Politics</button>
+        <button class="category-btn" data-category="sports">Sports</button>
+        <button class="category-btn" data-category="entertainment">Entertainment</button>
+        <button class="category-btn" data-category="technology">Technology</button>
+        <button class="category-btn" data-category="world">World</button>
+        <button class="category-btn" data-category="business">Business</button>
+        <button class="category-btn" data-category="science">Science</button>
+        <button class="category-btn" data-category="health">Health</button>
+      </div>
+    </div>
+
+    <div class="news-grid" style="padding-bottom:0">
+      <div class="ad-slot in-feed-ad">
+        <div><strong>Top Ad Space</strong><br>Place your ad code here (e.g., AdSense 728x90)</div>
+      </div>
+    </div>
+
+    <main class="news-grid" id="newsGrid">
+      <div class="loader-container" id="loader"><span class="loader"></span></div>
+      <div class="error-container" id="error">
+        <h2>Oops! Something went wrong.</h2>
+        <p id="errorMessage">Unable to fetch news. Please check your internet connection.</p>
+        <button class="retry-btn" onclick="fetchNews()">Try Again</button>
+      </div>
+    </main>
+
+    <div class="sticky-banner" id="stickyBanner">
+      <div class="ad-slot" style="margin:0;border:none;min-height:auto;width:100%">
+        <strong>Sticky Banner Ad Space</strong> - Place your ad code here
+      </div>
+    </div>
+
+    <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+        <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+      </svg>
+    </button>
+
+    <script>
+      // ✅ NewsData.io API Key (200 req/day free)
+      const API_KEY = 'pub_de107ecbb0cf4ebcbe7410cdce266964';
+
+      const newsGrid = document.getElementById('newsGrid');
+      const loader = document.getElementById('loader');
+      const errorContainer = document.getElementById('error');
+      const errorMessage = document.getElementById('errorMessage');
+      const categoryWrapper = document.getElementById('categoryWrapper');
+      const scrollTopBtn = document.getElementById('scrollTop');
+
+      let currentCategory = 'top';
+
+      // NewsData.io category mapping
+      const categoryMap = {
+        'top':           'top',
+        'national':      'top',
+        'politics':      'politics',
+        'sports':        'sports',
+        'entertainment': 'entertainment',
+        'technology':    'technology',
+        'world':         'world',
+        'business':      'business',
+        'science':       'science',
+        'health':        'health'
+      };
+
+      // Theme
+      function initTheme() {
+        const t = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        updateThemeIcons(t);
+      }
+      function updateThemeIcons(theme) {
+        document.getElementById('sunIcon').style.display = theme === 'dark' ? 'block' : 'none';
+        document.getElementById('moonIcon').style.display = theme === 'dark' ? 'none' : 'block';
+      }
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme');
+        const next = cur === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        updateThemeIcons(next);
+      });
+
+      // Category selection
+      categoryWrapper.addEventListener('click', (e) => {
+        if (e.target.classList.contains('category-btn')) {
+          document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          currentCategory = e.target.getAttribute('data-category');
+          fetchNews();
+        }
+      });
+
+      // ✅ NewsData.io — no proxy needed, CORS supported
+      async function fetchNews() {
+        document.querySelectorAll('.news-card').forEach(c => c.remove());
+        loader.style.display = 'flex';
+        errorContainer.style.display = 'none';
+
+        const cat = categoryMap[currentCategory] || 'top';
+        const country = currentCategory === 'national' ? '&country=in' : '';
+        const url = `https://newsdata.io/api/1/news?apikey=${API_KEY}&language=en&category=${cat}${country}`;
+
+        try {
+          const response = await fetch(url);
+
+          if (response.status === 401 || response.status === 403)
+            throw new Error('Invalid API key. Please check your NewsData.io key.');
+          if (response.status === 429)
+            throw new Error('Daily limit reached (200/day). Try again tomorrow.');
+          if (!response.ok)
+            throw new Error(`Server error: ${response.status}`);
+
+          const data = await response.json();
+
+          if (data.results && data.results.length > 0) {
+            displayNews(data.results);
+          } else {
+            throw new Error('No news found for this category.');
+          }
+        } catch (err) {
+          console.error('Fetch error:', err);
+          errorContainer.style.display = 'block';
+          errorMessage.textContent = !navigator.onLine
+            ? 'You are offline. Please check your connection.'
+            : err.message || 'Unable to load news. Please try again later.';
+        } finally {
+          loader.style.display = 'none';
+        }
+      }
+
+      function displayNews(articles) {
+        articles.slice(0, 12).forEach((article, i) => {
+          const card = document.createElement('div');
+          card.className = 'news-card';
+
+          const date = article.pubDate
+            ? new Date(article.pubDate).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })
+            : '';
+
+          // NewsData.io fields: title, description, link, image_url, pubDate, source_id, creator
+          const img = article.image_url
+            ? article.image_url
+            : `https://picsum.photos/seed/${i + 200}/400/200`;
+
+          const source = article.source_id || 'News Express';
+          const desc = article.description || 'Click to read the full article.';
+
+          card.innerHTML = `
+            <img class="news-image" src="${img}" alt="${article.title}" loading="lazy"
+              onerror="this.src='https://picsum.photos/seed/${i + 50}/400/200'">
+            <div class="news-content">
+              <div class="news-source">${source}</div>
+              <h3 class="news-title">${article.title}</h3>
+              <p class="news-desc">${desc}</p>
+              <div class="news-footer">
+                <span class="news-date">${date}</span>
+                <a href="${article.link}" target="_blank" class="read-more" rel="noopener noreferrer">Read More</a>
+              </div>
+            </div>
+          `;
+          newsGrid.appendChild(card);
+        });
+      }
+
+      // Scroll to top
+      window.addEventListener('scroll', () => {
+        scrollTopBtn.style.display = window.pageYOffset > 300 ? 'flex' : 'none';
+      });
+      scrollTopBtn.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
+
+      // Init
+      initTheme();
+      fetchNews();
+
+      window.addEventListener('online', fetchNews);
+      window.addEventListener('offline', () => {
+        if (!document.querySelectorAll('.news-card').length) {
+          loader.style.display = 'none';
+          errorContainer.style.display = 'block';
+          errorMessage.textContent = 'You are offline. Please check your connection.';
+        }
+      });
+    </script>
+  </body>
+</html>
